@@ -1,0 +1,25 @@
+{
+  "name": "@bizhub/mcp-server",
+  "version": "1.0.0",
+  "description": "Enterprise MCP server for BizHub marketplace — connect AI agents (Claude, Cursor, Copilot) to manage products, orders, inventory, and more",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "bizhub-mcp": "./bin/server.js"
+  },
+  "files": ["dist/", "bin/"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node bin/server.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@bizhub/agent-kit": "1.0.0",
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "zod": "^3.24.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
