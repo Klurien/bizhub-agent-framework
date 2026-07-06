@@ -1,23 +1,29 @@
 {
-  "name": "@bizhub/cli",
-  "version": "1.0.0",
+  "name": "@biz-hub/cli",
+  "version": "1.3.0",
   "description": "Enterprise CLI for BizHub marketplace — manage your entire commerce operation from the terminal. Designed for developers, DevOps, and AI agent workflows.",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "bizhub": "./bin/bizhub.js"
+    "bizhub-cli": "bin/bizhub.js"
   },
-  "files": ["dist/", "bin/"],
+  "files": [
+    "dist/",
+    "bin/"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node bin/bizhub.js",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@bizhub/agent-kit": "1.0.0",
+    "@biz-hub/agent-kit": "^1.0.0",
     "commander": "^13.1.0",
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">=18"

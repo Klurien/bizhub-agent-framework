@@ -1,5 +1,9 @@
 import type { MiddlewareFn, RateLimitConfig } from "../types.js";
 
+export { autoChart } from "./auto-chart.js";
+export { openTelemetryTracing } from "./opentelemetry.js";
+export { openTelemetryMetrics } from "./metrics.js";
+
 // ─── Logging Middleware ───────────────────────────────────────
 
 export function logging(options?: {

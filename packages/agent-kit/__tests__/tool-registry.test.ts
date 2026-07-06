@@ -157,9 +157,6 @@ void describe("All Tools", () => {
   });
 });
 
-import { BizHubAgent } from "../src/agent.js";
-import { rateLimit, retry } from "../src/middleware/index.js";
-
 void describe("BizHubAgent", () => {
   void it("should create agent with default tools", () => {
     const agent = new BizHubAgent({ name: "test" });

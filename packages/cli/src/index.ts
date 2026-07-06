@@ -2,7 +2,7 @@
 
 import { Command } from "commander";
 import chalk from "chalk";
-import { BizHubAgent, getConfig } from "@bizhub/agent-kit";
+import { BizHubAgent, getConfig } from "@biz-hub/agent-kit";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";

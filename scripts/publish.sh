@@ -32,18 +32,18 @@ echo ""
 
 # Publish order: agent-kit first, then dependents
 for PKG in agent-kit mcp-server cli; do
-  echo "→ Publishing @bizhub/$PKG..."
+  echo "→ Publishing @biz-hub/$PKG..."
   cd "$ROOT/packages/$PKG"
   
   # Check if version already exists
   VER=$(node -p "require('./package.json').version")
-  if npm view "@bizhub/$PKG@$VER" version &>/dev/null; then
+  if npm view "@biz-hub/$PKG@$VER" version &>/dev/null; then
     echo "  ⚠ Version $VER already published. Bump version first."
     continue
   fi
   
   npm publish --access public
-  echo "  ✔ @bizhub/$PKG@$VER published"
+  echo "  ✔ @biz-hub/$PKG@$VER published"
   cd "$ROOT"
   echo ""
 done
