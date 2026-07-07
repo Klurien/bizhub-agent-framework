@@ -5,6 +5,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
+    "bizhub": "bin/bizhub.js",
     "bizhub-cli": "bin/bizhub.js"
   },
   "files": [

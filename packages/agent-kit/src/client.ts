@@ -12,21 +12,36 @@ export class ApiError extends Error {
   }
 }
 
+export type ClientOptions = {
+  baseUrl?: string;
+  jwt?: string;
+};
+
 export class BizHubClient {
   private baseUrl: string;
   private headers: Record<string, string>;
 
-  constructor() {
-    const cfg = getConfig();
-    this.baseUrl = cfg.apiUrl;
+  constructor(opts?: ClientOptions) {
+    if (opts?.baseUrl) {
+      this.baseUrl = opts.baseUrl;
+    } else {
+      const cfg = getConfig();
+      this.baseUrl = cfg.apiUrl;
+    }
+
     this.headers = { "Content-Type": "application/json" };
 
-    if (cfg.apiKey) {
-      this.headers["X-API-Key"] = cfg.apiKey;
-    }
-    if (cfg.authCookie) {
-      this.headers["Cookie"] = `auth=${cfg.authCookie}`;
-      this.headers["Authorization"] = `Bearer ${cfg.authCookie}`;
+    if (opts?.jwt) {
+      this.headers["Authorization"] = `Bearer ${opts.jwt}`;
+    } else {
+      const cfg = getConfig();
+      if (cfg.apiKey) {
+        this.headers["X-API-Key"] = cfg.apiKey;
+      }
+      if (cfg.authCookie) {
+        this.headers["Cookie"] = `auth=${cfg.authCookie}`;
+        this.headers["Authorization"] = `Bearer ${cfg.authCookie}`;
+      }
     }
   }
 
@@ -53,6 +68,10 @@ export class BizHubClient {
     }
 
     return data as T;
+  }
+
+  getAuthHeaders(): Record<string, string> {
+    return { ...this.headers };
   }
 
   // ─── Products ──────────────────────────────────────────────

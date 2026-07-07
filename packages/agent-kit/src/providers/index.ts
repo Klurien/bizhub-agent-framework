@@ -4,3 +4,4 @@
 export type { ProviderAdapter } from "../types.js";
 export { openAIAdapter } from "./openai.js";
 export { anthropicAdapter } from "./anthropic.js";
+export * from "./config.js";
