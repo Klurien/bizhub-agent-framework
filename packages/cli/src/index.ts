@@ -5,6 +5,7 @@ import chalk from "chalk";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -205,6 +206,23 @@ program.command("stores").description("List stores").option("--json").action(asy
   if (o.json) return console.log(JSON.stringify(r.data, null, 2));
   printTable(["Name", "Rating", "Products", "Verified"], ((r.data as any[]) || []).map((s: any) => [s.name, s.rating ? chalk.yellow(`${s.rating.toFixed(1)} ★`) : "—", s._count?.products?.toString() || "—", s.isVerified ? chalk.green("✓") : chalk.dim("—")]));
 });
+
+// ─── Dashboard ──────────────────────────────────────────────
+
+program
+  .command("dashboard")
+  .description("Open the admin dashboard in your browser")
+  .action(() => {
+    const cfg = getConfig();
+    const url = cfg.apiUrl?.replace(/\/api\/?$/, "") || "http://localhost:3001";
+    const panelUrl = `${url}/panel`;
+    console.log(chalk.cyan("  → Opening"), chalk.white(panelUrl));
+    try {
+      execSync(`xdg-open "${panelUrl}"`, { stdio: "ignore" });
+    } catch {
+      console.log(chalk.yellow("  ⚠ Could not open browser. Visit:"), chalk.cyan(panelUrl));
+    }
+  });
 
 // ─── Config ─────────────────────────────────────────────────
 
