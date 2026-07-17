@@ -18,6 +18,16 @@ export { analyticsTools } from "./tools/analytics.js";
 export { storeTools } from "./tools/stores.js";
 export { chartTools } from "./tools/charts.js";
 
+// Messaging (E2E encrypted human-to-human chat)
+export { MessagingClient } from "./messaging/index.js";
+export {
+  encryptMessage,
+  decryptMessage,
+  generateKeyPair,
+  computeSharedSecret,
+  keyStore,
+} from "./messaging/index.js";
+
 // Middleware
 export {
   logging,

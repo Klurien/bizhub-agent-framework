@@ -45,7 +45,12 @@ export class BizHubClient {
     }
   }
 
-  private async request<T>(
+  setAuth(token: string) {
+    this.headers["Cookie"] = `auth=${token}`;
+    this.headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  async request<T>(
     method: string,
     path: string,
     body?: unknown

@@ -6,6 +6,10 @@ interface BizHubConfig {
   apiUrl: string;
   authCookie: string;
   apiKey?: string;
+  userEmail?: string;
+  userName?: string;
+  userRole?: string;
+  userId?: string;
 }
 
 const configDir = join(homedir(), ".bizhub");
@@ -36,12 +40,20 @@ export function getConfig(): BizHubConfig {
       apiUrl: process.env.BIZHUB_API_URL || cfg.apiUrl || "http://localhost:3001",
       authCookie: process.env.BIZHUB_AUTH_COOKIE || cfg.authCookie || "",
       apiKey: process.env.BIZHUB_API_KEY || cfg.apiKey || "",
+      userEmail: cfg.userEmail || "",
+      userName: cfg.userName || "",
+      userRole: cfg.userRole || "USER",
+      userId: cfg.userId || "",
     };
   } catch {
     return {
       apiUrl: process.env.BIZHUB_API_URL || "http://localhost:3001",
       authCookie: process.env.BIZHUB_AUTH_COOKIE || "",
       apiKey: process.env.BIZHUB_API_KEY || "",
+      userEmail: "",
+      userName: "",
+      userRole: "USER",
+      userId: "",
     };
   }
 }
