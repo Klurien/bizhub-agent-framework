@@ -195,11 +195,26 @@ function printTable(headers: string[], rows: string[][]) {
   console.log(t.toString());
 }
 
+/**
+ * Commander option values are always strings, but the tool schemas declare
+ * `limit` as a number. Coerce it (and drop the CLI-only `json` flag) before
+ * handing options to a tool, otherwise Zod rejects every paginated call.
+ */
+function withNumericLimit<T extends { limit?: unknown; json?: unknown }>(o: T) {
+  const { json, ...rest } = o as Record<string, unknown>;
+  if (typeof rest.limit === "string") {
+    const n = parseInt(rest.limit, 10);
+    if (!Number.isNaN(n)) rest.limit = n;
+    else delete rest.limit;
+  }
+  return rest as T;
+}
+
 const products = program.command("products").description("Manage products");
 
 products.command("list").description("List products").option("-c, --category <slug>", "Filter by category").option("--sort <field>", "Sort order").option("-l, --limit <n>", "Max results", "50").option("--json", "JSON output").action(async (o) => {
   if (!(await ensureAuth())) return console.log(chalk.red("✖ Not authenticated. Run `bizhub dashboard` first."));
-  const r = await agent.execute("products_list", o);
+  const r = await agent.execute("products_list", withNumericLimit(o));
   if (o.json) return console.log(JSON.stringify(r.data, null, 2));
   printTable(["Name", "Price", "Stock", "Status", "Category"], (r.data as any)?.products?.map((p: any) => [p.name?.slice(0, 30), chalk.green(`$${p.price?.toFixed(2)}`), p.inventory?.toString(), p.status === "ACTIVE" ? chalk.green("active") : chalk.yellow(p.status), p.category || "—"]) || []);
 });
@@ -237,7 +252,7 @@ const orders = program.command("orders").description("Manage orders");
 
 orders.command("list").description("List orders").option("--status <status>").option("-l, --limit <n>", "50").option("--json", "JSON output").action(async (o) => {
   if (!(await ensureAuth())) return console.log(chalk.red("✖ Not authenticated."));
-  const r = await agent.execute("orders_list", o);
+  const r = await agent.execute("orders_list", withNumericLimit(o));
   if (o.json) return console.log(JSON.stringify(r.data, null, 2));
   printTable(["ID", "Product", "Buyer", "Amount", "Status", "Date"], (r.data as any)?.orders?.map((o: any) => [chalk.dim(o.id?.slice(0, 8)), o.product?.name?.slice(0, 25) || "—", o.buyer?.name?.slice(0, 15) || "—", chalk.green(`$${o.amount?.toFixed(2)}`), statusColor(o.status), chalk.dim(new Date(o.createdAt).toLocaleDateString())]) || []);
 });
