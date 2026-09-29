@@ -170,11 +170,68 @@ import Table from "cli-table3";
 const agent = new BizHubAgent({ name: "bizhub-cli", version: pkg.version });
 agent.loadDefaultTools();
 
+/**
+ * Re-authenticate using credentials from ~/.bizhub/credentials.json.
+ * Returns the new token, or null if no usable credentials are stored.
+ * Never prints the token or the password.
+ */
+async function refreshAuthFromStore(apiUrl: string): Promise<string | null> {
+  const credPath = join(homedir(), ".bizhub", "credentials.json");
+  if (!existsSync(credPath)) return null;
+  let creds: { email?: string; password?: string };
+  try {
+    creds = JSON.parse(readFileSync(credPath, "utf-8"));
+  } catch {
+    return null;
+  }
+  if (!creds.email || !creds.password) return null;
+
+  try {
+    const res = await fetch(`${apiUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: creds.email, password: creds.password }),
+    });
+    if (!res.ok) return null;
+    const match = res.headers.get("set-cookie")?.match(/auth=([^;]+)/);
+    if (!match) return null;
+    saveConfig({ authCookie: match[1] });
+    return match[1];
+  } catch {
+    return null;
+  }
+}
+
 async function ensureAuth(): Promise<string | false> {
   const cfg = getConfig();
   if (cfg.authCookie) {
     api.setAuth(cfg.authCookie);
-    return cfg.authCookie;
+    // Session tokens are short-lived. A stale one produced opaque 401s on
+    // every command, so probe once and transparently re-authenticate.
+    try {
+      const res = await fetch(`${cfg.apiUrl || "http://localhost:3001"}/api/auth/me`, {
+        headers: { Cookie: `auth=${cfg.authCookie}` },
+      });
+      if (res.ok || res.status === 403) return cfg.authCookie;
+    } catch {
+      /* fall through to refresh */
+    }
+    const fresh = await refreshAuthFromStore(cfg.apiUrl || "http://localhost:3001");
+    if (fresh) {
+      api.setAuth(fresh);
+      return fresh;
+    }
+    console.log(
+      chalk.yellow("  Session expired. Run"),
+      chalk.cyan("bizhub login"),
+      chalk.yellow("to re-authenticate.")
+    );
+    return false;
+  }
+  const fresh = await refreshAuthFromStore(cfg.apiUrl || "http://localhost:3001");
+  if (fresh) {
+    api.setAuth(fresh);
+    return fresh;
   }
   console.log(chalk.yellow("  Not logged in. Run"), chalk.cyan("bizhub login"), chalk.yellow("first."));
   return false;
