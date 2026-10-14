@@ -104,35 +104,49 @@ export class MessagingClient {
 
     if (shouldEncrypt) {
       const conv = await this.getConversation(conversationId);
-      const peers = conv.participants.filter((p) => p.userId !== this.userId && p.publicKey);
+      const others = conv.participants.filter((p) => p.userId !== this.userId);
 
-      if (peers.length > 0) {
-        const myKeys = keyStore.getKeyPair(this.userId);
-        if (!myKeys) {
-          return this.request<Message>("POST", `/conversations/${conversationId}/messages`, {
-            text,
-            replyTo,
-          });
-        }
-
-        const encryptedPerPeer = await Promise.all(
-          peers.map(async (peer) => {
-            const sharedSecret = await keyStore.getOrCreateSharedSecret(
-              this.userId,
-              conversationId,
-              peer.publicKey!
-            );
-            return encryptMessage(text, sharedSecret);
-          })
+      // Previously this silently fell through to plaintext when encryption
+      // was impossible. A caller who asked for encryption must never get an
+      // unencrypted message they did not consent to.
+      const myKeys = keyStore.getKeyPair(this.userId);
+      if (!myKeys) {
+        throw new Error(
+          `Cannot encrypt message to "${conversationId}": this client has no keypair ` +
+            `for user "${this.userId}". Call registerKeys() first. ` +
+            `Send with encrypt:false only if plaintext is acceptable.`
         );
-
-        return this.request<Message>("POST", `/conversations/${conversationId}/messages`, {
-          encryptedPayloads: encryptedPerPeer,
-          replyTo,
-          encrypted: true,
-          senderPublicKey: myKeys.publicKey,
-        });
       }
+
+      const peersWithKeys = others.filter((p) => p.publicKey);
+      if (peersWithKeys.length < others.length) {
+        const missing = others
+          .filter((p) => !p.publicKey)
+          .map((p) => p.userId)
+          .join(", ");
+        throw new Error(
+          `Cannot encrypt message to "${conversationId}": no public key for: ${missing}. ` +
+            `Register keys for those users first, or send with encrypt:false.`
+        );
+      }
+
+      const encryptedPerPeer = await Promise.all(
+        peersWithKeys.map(async (peer) => {
+          const sharedSecret = await keyStore.getOrCreateSharedSecret(
+            this.userId,
+            conversationId,
+            peer.publicKey!
+          );
+          return encryptMessage(text, sharedSecret);
+        })
+      );
+
+      return this.request<Message>("POST", `/conversations/${conversationId}/messages`, {
+        encryptedPayloads: encryptedPerPeer,
+        replyTo,
+        encrypted: true,
+        senderPublicKey: myKeys.publicKey,
+      });
     }
 
     return this.request<Message>("POST", `/conversations/${conversationId}/messages`, {

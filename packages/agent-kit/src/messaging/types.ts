@@ -101,7 +101,10 @@ export const SendMessageSchema = z.object({
   conversationId: z.string(),
   text: z.string().min(1).max(10000),
   replyTo: z.string().optional(),
-  encrypt: z.boolean().default(true),
+  // Defaults to FALSE so encryption is an explicit opt-in. Previously this
+  // defaulted to true, and the client silently downgraded to plaintext when
+  // keys were missing — callers believed they were encrypted when they were not.
+  encrypt: z.boolean().default(false),
 });
 
 export type CreateConversationInput = z.infer<typeof CreateConversationSchema>;

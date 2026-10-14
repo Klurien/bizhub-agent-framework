@@ -306,3 +306,45 @@ import { getConfig, type ClientConfig } from "@biz-hub/agent-kit";
 ## License
 
 Proprietary — see LICENSE
+
+---
+
+## Messaging
+
+Nine agent tools expose conversations and messages:
+
+| Tool | Purpose |
+|---|---|
+| `conversations_list` | List the agent user's conversations |
+| `conversations_get` | Fetch one conversation |
+| `conversations_create` | Open a `direct` or `group` conversation |
+| `conversations_update` | Rename a conversation, add/remove participants |
+| `conversations_delete` | Permanently delete a conversation and its messages |
+| `messages_list` | Paginated history (`limit`, `before` cursor) |
+| `messages_send` | Send a message, optionally end-to-end encrypted |
+| `messages_delete` | Delete your own message |
+| `messages_mark_read` | Clear the unread count for the current user |
+
+For a buyer-facing chat UI, see `packages/chat-widget` (WhatsApp-style widget)
+and `packages/chat-server` (the backend it talks to). The transport contract is
+specified in [`docs/CHAT_CONTRACT.md`](../../docs/CHAT_CONTRACT.md).
+
+### Encryption is explicit opt-in
+
+`messages_send` and `MessagingClient.sendMessage` accept `encrypt`, which now
+**defaults to `false`**.
+
+When you pass `encrypt: true` the client **throws** rather than send plaintext.
+It throws if the sender has no local keypair, or if any recipient is missing a
+public key:
+
+```
+Cannot encrypt message to "c1": no public key for: u2.
+Register keys for those users first, or send with encrypt:false.
+```
+
+Earlier versions silently fell back to plaintext in both cases, so a caller
+believed a message was encrypted when it was not. If you depended on that
+fallback, pass `encrypt: false` explicitly — it is now a conscious choice.
+
+Call `registerKeys(userId)` before the first encrypted send.
