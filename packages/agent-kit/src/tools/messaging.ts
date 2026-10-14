@@ -87,6 +87,58 @@ export const conversationsDelete: ToolDefinition = {
   version: "1.0.0",
 };
 
+export const conversationsUpdate: ToolDefinition = {
+  name: "conversations_update",
+  description:
+    "Update an existing conversation: change its title, and/or add or remove participants. Use this to name a group conversation, or to add a seller/buyer to an existing thread.",
+  schema: z.object({
+    conversationId: z.string().describe("The conversation ID to update"),
+    title: z
+      .string()
+      .max(200)
+      .optional()
+      .describe("New conversation title"),
+    addParticipantIds: z
+      .array(z.string())
+      .max(256)
+      .optional()
+      .describe("User IDs to add to the conversation"),
+    removeParticipantIds: z
+      .array(z.string())
+      .max(256)
+      .optional()
+      .describe("User IDs to remove from the conversation"),
+  }),
+  handler: async ({
+    conversationId,
+    title,
+    addParticipantIds,
+    removeParticipantIds,
+  }) => {
+    if (
+      title === undefined &&
+      !addParticipantIds?.length &&
+      !removeParticipantIds?.length
+    ) {
+      return {
+        success: false,
+        error:
+          "Nothing to update. Provide at least one of: title, addParticipantIds, removeParticipantIds.",
+      };
+    }
+
+    const data = await api.request("PATCH", `/conversations/${conversationId}`, {
+      title,
+      addParticipantIds,
+      removeParticipantIds,
+    });
+    return { success: true, data };
+  },
+  permissions: ["messages:write"],
+  rateLimit: { maxRequests: 20, windowMs: 60000 },
+  version: "1.0.0",
+};
+
 export const messagesList: ToolDefinition = {
   name: "messages_list",
   description:
@@ -121,7 +173,7 @@ export const messagesList: ToolDefinition = {
 export const messagesSend: ToolDefinition = {
   name: "messages_send",
   description:
-    "Send a message to a conversation. The message will be encrypted end-to-end if the conversation has encryption enabled.",
+    "Send a message to a conversation. Pass encrypt:true to request end-to-end encryption. IMPORTANT: if encryption is requested but cannot be satisfied (recipient has no public key, or this client holds no keypair), the send FAILS rather than silently downgrading to plaintext.",
   schema: z.object({
     conversationId: z.string().describe("The conversation ID to send to"),
     text: z
@@ -133,12 +185,18 @@ export const messagesSend: ToolDefinition = {
       .string()
       .optional()
       .describe("Message ID to reply to (for threads)"),
+    encrypt: z
+      .boolean()
+      .default(false)
+      .describe(
+        "Request end-to-end encryption. Throws if encryption is impossible rather than sending plaintext."
+      ),
   }),
-  handler: async ({ conversationId, text, replyTo }) => {
+  handler: async ({ conversationId, text, replyTo, encrypt }) => {
     const data = await api.request(
       "POST",
       `/conversations/${conversationId}/messages`,
-      { text, replyTo }
+      encrypt ? { text, replyTo, encrypt: true } : { text, replyTo }
     );
     return { success: true, data };
   },
@@ -186,6 +244,7 @@ export const messagingTools: ToolDefinition[] = [
   conversationsList,
   conversationsGet,
   conversationsCreate,
+  conversationsUpdate,
   conversationsDelete,
   messagesList,
   messagesSend,
